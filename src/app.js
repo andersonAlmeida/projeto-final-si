@@ -12,6 +12,10 @@ consign({ cwd: __dirname })
   .then('./routes')
   .into(app)
 
+// incia o sessão com o dialogflow
+app.controllers.nlpController.startSession()
+app.controllers.telegramBotController.startTelegramBot()
+
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`)
 })
