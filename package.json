@@ -8,10 +8,12 @@
   },
   "dependencies": {
     "@google-cloud/dialogflow": "^3.2.0",
+    "@nlpjs/basic": "^4.10.7",
     "consign": "^0.1.6",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "mongodb": "^3.6.1",
+    "node-nlp": "^4.10.7",
     "telegraf": "^3.38.0",
     "uuid": "^8.3.0"
   },

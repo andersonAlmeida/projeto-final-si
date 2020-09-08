@@ -13,7 +13,12 @@ consign({ cwd: __dirname })
   .into(app)
 
 // incia o sessão com o dialogflow
-app.controllers.nlpController.startSession()
+// app.controllers.nlpController.startSession()
+
+// Inicia o NLP.js
+app.controllers.nlpController.startNlp()
+
+// Inicia o bot do telegram
 app.controllers.telegramBotController.startTelegramBot()
 
 app.listen(port, () => {

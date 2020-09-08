@@ -13,7 +13,13 @@ module.exports = (app) => ({
     })
 
     bot.on('text', async (ctx) => {
-      const botResponse = await app.controllers.nlpController.sendChatMessage(
+      // Dialogflow
+      // const botResponse = await app.controllers.dialogflowController.sendChatMessage(
+      //   ctx.message.text
+      // )
+
+      // NLP.js
+      const botResponse = await app.controllers.nlpController.nlpProccessUtterance(
         ctx.message.text
       )
 

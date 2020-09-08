@@ -1,53 +1,78 @@
-const dialogflow = require('@google-cloud/dialogflow')
-const uuid = require('uuid')
+// const { dockStart } = require('@nlpjs/basic')
+const { NlpManager } = require('node-nlp')
+const fs = require('fs')
 
 /** @param { import('express').Express} app */
 module.exports = (app) => ({
-  sessionPath: null,
-  sessionClient: null,
-  /**
-   * Cria uma sessão para o dialogflow
-   * @param {string} projectId The project to be used
-   */
-  startSession(projectId = process.env.DIALOGFLOW_PROJECT_ID) {
-    // A unique identifier for the given session
-    const sessionId = uuid.v4()
+  nlp: new NlpManager({
+    languages: ['pt'],
+    // forceNER: true,
+    extractEntities: true,
+  }),
+  async startNlp() {
+    const nlp = app.controllers.nlpController.nlp
+    const data = await fs.readFileSync('./src/dictionaries/model.nlp', 'utf8')
 
-    // Create a new session
-    app.controllers.nlpController.sessionClient = new dialogflow.SessionsClient()
-    app.controllers.nlpController.sessionPath = app.controllers.nlpController.sessionClient.projectAgentSessionPath(
-      projectId,
-      sessionId
-    )
-  },
-  async sendChatMessage(message) {
-    // The text query request.
-    const request = {
-      session: app.controllers.nlpController.sessionPath,
-      queryInput: {
-        text: {
-          // The query to send to the dialogflow agent
-          text: message,
-          // The language used by the client (en-US)
-          languageCode: 'pt-BR',
-        },
-      },
-    }
-
-    // Send request and log result
-    const responses = await app.controllers.nlpController.sessionClient.detectIntent(
-      request
-    )
-    console.log('Detected intent')
-    const result = responses[0].queryResult
-    console.log(`  Query: ${result.queryText}`)
-    console.log(`  Response: ${result.fulfillmentText}`)
-    if (result.intent) {
-      console.log(`  Intent: ${result.intent.displayName}`)
+    if (!data) {
+      nlp.import(data)
     } else {
-      console.log(`  No intent matched.`)
-    }
+      console.log('>>>>> Treinando a budega')
+      /**
+       * addDocument(locale, utterance, intent) {
+       */
+      nlp.addDocument('pt', 'até mais', 'despedida')
+      nlp.addDocument('pt', 'obrigado por enquanto', 'despedida')
+      nlp.addDocument('pt', 'vejo você depois', 'despedida')
+      nlp.addDocument('pt', 'tchau', 'despedida')
+      nlp.addDocument('pt', 'tenho que ir', 'despedida')
 
-    return result.fulfillmentText
+      nlp.addDocument('pt', 'olá', 'saudacao')
+      nlp.addDocument('pt', 'oi', 'saudacao')
+      nlp.addDocument('pt', 'oie', 'saudacao')
+
+      nlp.addDocument('pt', 'tem horário?', 'agendamento')
+      nlp.addDocument('pt', 'quais são os horários disponíveis?', 'agendamento')
+      nlp.addDocument('pt', 'Posso agendar?', 'agendamento')
+      nlp.addDocument(
+        'pt',
+        'gostaria de um agendamento para %date%',
+        'agendamento'
+      )
+
+      nlp.addDocument('pt', 'qual o valor?', 'orcamento')
+      nlp.addDocument('pt', 'quanto custa?', 'orcamento')
+
+      // Train also the NLG
+      /**
+       * addAnswer(locale, intent, answer, opts) {
+       */
+      nlp.addAnswer('pt', 'despedida', 'Até mais')
+      nlp.addAnswer('pt', 'despedida', 'vejo você em breve!')
+
+      nlp.addAnswer('pt', 'saudacao', 'olá!')
+      nlp.addAnswer('pt', 'saudacao', 'oii!')
+      nlp.addAnswer('pt', 'saudacao', 'oie!')
+      nlp.addAnswer('pt', 'saudacao', 'oi!')
+      nlp.addAnswer('pt', 'saudacao', 'oi, seja bem-vinda(o)!')
+
+      nlp.addAnswer('pt', 'orcamento', 'O valor é R$ 300,00')
+
+      nlp.addAnswer('pt', 'agendamento', 'Para quando gostaria?')
+
+      // await nlp.addCorpus('./corpus-en.json')
+      await nlp.train()
+      nlp.save('./src/dictionaries/model.nlp', true)
+    }
+  },
+  async nlpProccessUtterance(utterance) {
+    const nlp = app.controllers.nlpController.nlp
+    const response = await nlp.process('pt', utterance)
+    console.log(JSON.stringify(response))
+
+    if (response.answer) {
+      return response.answer
+    } else {
+      return 'Desculpe. Não consegui compreender. Poderia repetir de uma outra forma?'
+    }
   },
 })
