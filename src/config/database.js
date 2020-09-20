@@ -11,7 +11,7 @@ module.exports = (app) => {
     { useNewUrlParser: true, useUnifiedTopology: true },
     (err, client) => {
       // se o erro não for igual a null, gera uma exceção
-      assert.equal(null, err)
+      assert.strictEqual(null, err)
       console.log('Mongo conectado com sucesso')
 
       app.db = client.db(dbName)
