@@ -8,4 +8,5 @@ module.exports = (app) => {
   app.get('/nlp/intents', nlp.getIntents)
   app.post('/nlp/intents', nlp.createIntent)
   app.delete('/nlp/intent', nlp.deleteIntent)
+  app.put('/nlp/intent', nlp.updateIntent)
 }

@@ -1,13 +1,7 @@
 const dialogflow = require('@google-cloud/dialogflow')
-const { response } = require('express')
 const uuid = require('uuid')
 
 const projectId = process.env.DIALOGFLOW_PROJECT_ID
-const displayName = 'The display name of the intent, e.g. MAKE_RESERVATION'
-const trainingPhrasesParts =
-  'Training phrases, e.g. How many people are staying?'
-const messageTexts =
-  'Message texts for the agents response when the intent is detected, e.g. Your reservation has been confirmed'
 
 /** @param { import('express').Express} app */
 module.exports = (app) => ({
@@ -124,43 +118,32 @@ module.exports = (app) => ({
     res.json(response)
   },
 
+  // https://googleapis.dev/nodejs/dialogflow/latest/v2.IntentsClient.html#updateIntent
   async updateIntent(req, res) {
     // Instantiates clients
     const intentsClient = new dialogflow.IntentsClient()
-    const intent = existingIntent //intent that needs to be updated
+    const intent = req.body //intent that needs to be updated
 
-    const trainingPhrases = []
-    let previousTrainingPhrases =
-      existingIntent.trainingPhrases.length > 0
-        ? existingIntent.trainingPhrases
-        : []
-
-    previousTrainingPhrases.forEach((textdata) => {
-      newTrainingPhrases.push(textdata.parts[0].text)
-    })
-
-    newTrainingPhrases.forEach((phrase) => {
-      const part = {
-        text: phrase,
-      }
-
-      // Here we create a new training phrase for each provided part.
-      const trainingPhrase = {
-        type: 'EXAMPLE',
-        parts: [part],
-      }
-      trainingPhrases.push(trainingPhrase)
-    })
-    intent.trainingPhrases = trainingPhrases
-    const updateIntentRequest = {
-      intent,
-      languageCode: 'en-US',
+    // adiciona os campos que devem ser atualizados
+    // https://cloud.google.com/dialogflow/es/docs/how/field-mask#node.js
+    const updateMask = {
+      paths: ['display_name', 'training_phrases', 'messages'], // deve ser snake_case, na doc está errado
     }
 
-    // Send the request for update the intent.
-    const result = await intentsClient.updateIntent(updateIntentRequest)
+    const updateIntentRequest = {
+      intent,
+      updateMask,
+      intentView: 'INTENT_VIEW_FULL',
+    }
 
-    return result
+    try {
+      // Send the request for update the intent.
+      const result = await intentsClient.updateIntent(updateIntentRequest)
+
+      return res.json(result)
+    } catch (e) {
+      return res.status(400).json(e)
+    }
   },
 
   async deleteIntent(req, res) {
